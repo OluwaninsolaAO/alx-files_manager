@@ -36,7 +36,7 @@ class FilesController {
       if (!queryResult) {
         return res.status(400).send({ error: 'Parent not found' });
       }
-      if (queryResult.data.type !== 'folder') {
+      if (queryResult.type !== 'folder') {
         return res.status(400).send({ error: 'Parent is not a folder' });
       }
     }
@@ -64,8 +64,8 @@ class FilesController {
     data.parentId = data.parentId || 0;
     data.isPublic = data.isPublic || false;
     delete data.data;
-    const queryResult = await files.insertOne({ data });
-    const objFromQuery = { ...queryResult.ops[0].data };
+    const queryResult = await files.insertOne(data);
+    const objFromQuery = { ...queryResult.ops[0] };
     delete objFromQuery.localPath;
     return res
       .status(201)
