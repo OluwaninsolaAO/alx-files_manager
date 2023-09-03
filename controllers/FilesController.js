@@ -71,6 +71,67 @@ class FilesController {
       .status(201)
       .send({ ...objFromQuery, id: queryResult.insertedId });
   }
+
+  static async getShow(req, res) {
+    // retrieve user from storage
+    const token = req.headers['x-token'];
+    if (!token) return res.status(401).send({ error: 'Unauthorized' });
+
+    const userId = await redisClient.get(`auth_${token}`);
+    if (!userId) return res.status(401).send({ error: 'Unauthorized' });
+
+    const users = await dbClient.db.collection('users');
+    const user = await users.findOne({ _id: ObjectId(userId) });
+    if (!user) return res.status(401).send({ error: 'Unauthorized' });
+
+    // retrieve document from storage
+    const fileId = req.params.id;
+    if (!fileId) return res.status(404).send({ error: 'Not found' });
+    const files = await dbClient.db.collection('files');
+    const file = await files.findOne({ _id: ObjectId(fileId) });
+    if (!file) return res.status(404).send({ error: 'Not found' });
+
+    delete file.localPath;
+    file.id = file._id;
+    delete file._id;
+    return res.send(file);
+  }
+
+  static async getIndex(req, res) {
+    // retrieve user from storage
+    const token = req.headers['x-token'];
+    if (!token) return res.status(401).send({ error: 'Unauthorized' });
+
+    const userId = await redisClient.get(`auth_${token}`);
+    if (!userId) return res.status(401).send({ error: 'Unauthorized' });
+
+    const users = await dbClient.db.collection('users');
+    const user = await users.findOne({ _id: ObjectId(userId) });
+    if (!user) return res.status(401).send({ error: 'Unauthorized' });
+
+    // retrieve file from storage
+    const { parentId } = req.query;
+    const page = req.query.page || 0;
+    const limit = 20;
+    const files = await dbClient.db.collection('files');
+    const parentFiles = await files
+      .aggregate([
+        { $match: { parentId } },
+        { $skip: page * limit },
+        { $limit: limit },
+      ])
+      .toArray();
+
+    return res.send(
+      parentFiles.map((file) => {
+        const obj = { ...file };
+        obj.id = obj._id;
+        delete obj._id;
+        delete obj.localPath;
+        return obj;
+      }),
+    );
+  }
 }
 
 module.exports = FilesController;
