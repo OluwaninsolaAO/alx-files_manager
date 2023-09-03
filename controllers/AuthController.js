@@ -13,6 +13,7 @@ class AuthController {
     )
       .toString('utf-8')
       .split(':');
+    if (!email || !password) return res.status(401).send({ error: 'Unauthorized' });
 
     // get user if exists with matching credentials
     const users = await dbClient.db.collection('users');
