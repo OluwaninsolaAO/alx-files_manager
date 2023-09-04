@@ -88,7 +88,7 @@ class FilesController {
     const fileId = req.params.id;
     if (!fileId) return res.status(404).send({ error: 'Not found' });
     const files = await dbClient.db.collection('files');
-    const file = await files.findOne({ _id: ObjectId(fileId) });
+    const file = await files.findOne({ _id: ObjectId(fileId), userId });
     if (!file) return res.status(404).send({ error: 'Not found' });
 
     delete file.localPath;
@@ -116,7 +116,7 @@ class FilesController {
     const files = await dbClient.db.collection('files');
     const parentFiles = await files
       .aggregate([
-        { $match: { parentId } },
+        { $match: { parentId, userId } },
         { $skip: page * limit },
         { $limit: limit },
       ])
